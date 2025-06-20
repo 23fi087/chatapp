@@ -3,170 +3,379 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat App</title>
+    <title>🎨 共同お絵かきチャット</title>
+    <!-- Tailwind CSS CDNを読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      .chat {
+      /* Interフォントを適用 */
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f0f2f5; /* 明るい背景色 */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+      .chat-container {
         display: flex;
         flex-direction: column;
-        height: 80vh; /* チャットエリアの高さを調整 */
+        background-color: #ffffff;
+        border-radius: 1rem; /* 角を丸く */
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* 影を追加 */
+        overflow: hidden;
+        width: 90%;
+        max-width: 900px;
+        height: 90vh; /* 高さも画面に合わせる */
       }
       .messages {
         flex: 1;
         overflow-y: auto;
         list-style: none;
-        padding: 0;
+        padding: 1rem;
         margin: 0;
+        background-color: #e9ecef; /* メッセージエリアの背景色 */
+      }
+      .message-item {
+        margin-bottom: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 0.75rem; /* メッセージの角を丸く */
+        max-width: 70%;
+        word-wrap: break-word;
+      }
+      .my-message {
+        background-color: #a0c4ff; /* 自分のメッセージの背景色 */
+        align-self: flex-end; /* 右寄せ */
+      }
+      .other-message {
+        background-color: #dee2e6; /* 相手のメッセージの背景色 */
+        align-self: flex-start; /* 左寄せ */
       }
       .form {
         display: flex;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-top: 1px solid #e0e0e0;
       }
       .input {
         flex: 1;
-        padding: 10px;
-        border: 1px solid #ccc;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.75rem;
+        margin-right: 0.75rem;
+        outline: none;
       }
-      .submit {
-        padding: 10px;
-        border: 1px solid #ccc;
-        background: #eee;
+      .input:focus {
+        border-color: #6c757d;
+      }
+      .submit-button {
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.75rem;
+        background-color: #6c757d;
+        color: white;
+        font-weight: bold;
         cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .submit-button:hover {
+        background-color: #495057;
+      }
+      .control-panel {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1rem;
+        background-color: #ffffff;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .control-button {
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.75rem;
+        background-color: #28a745; /* 緑色のボタン */
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .control-button:hover {
+        background-color: #218838;
+      }
+      .clear-button {
+        background-color: #dc3545; /* 赤色のボタン */
+      }
+      .clear-button:hover {
+        background-color: #c82333;
+      }
+      .about-button {
+        background-color: #007bff; /* 青色のボタン */
+      }
+      .about-button:hover {
+        background-color: #0069d9;
+      }
+
+      /* モーダル */
+      .modal {
+        display: none; /* 初期状態では非表示 */
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4); /* 半透明の黒背景 */
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-content {
+        background-color: #fefefe;
+        margin: auto;
+        padding: 2rem;
+        border-radius: 1rem;
+        width: 80%;
+        max-width: 500px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
+      .close-button {
+        color: #aaa;
+        float: right;
+        font-size: 2rem;
+        font-weight: bold;
+        position: absolute;
+        top: 1rem;
+        right: 1.5rem;
+      }
+      .close-button:hover,
+      .close-button:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      #canvas {
+        background-color: #ffffff;
+        border-radius: 0.75rem; /* キャンバスの角を丸く */
+        display: block; /* 中央寄せのためにブロック要素に */
+        margin: 1rem auto; /* 上下に余白、左右中央寄せ */
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); /* 影を追加 */
+      }
+      /* メッセージをフレックスボックスでラップして並べる */
+      .messages-wrapper {
+        display: flex;
+        flex-direction: column;
       }
     </style>
   </head>
   <body>
-    <div class="chat">
-      <ul class="messages"></ul>
-      <form class="form">
-        <input class="input" autocomplete="off" />
-        <button class="submit">Send</button>
-      </form>
+    <div class="chat-container">
+      <!-- アプリケーションのヘッダー -->
+      <div class="control-panel">
+        <button id="aboutButton" class="control-button about-button">
+          このアプリについて
+        </button>
+        <button id="clearCanvasButton" class="control-button clear-button">
+          キャンバスをクリア
+        </button>
+      </div>
+
+      <!-- チャットとキャンバスエリア -->
+      <div class="flex-grow flex flex-col md:flex-row overflow-hidden">
+        <!-- チャットエリア -->
+        <div class="flex-1 flex flex-col h-full">
+          <ul class="messages messages-wrapper"></ul>
+          <form class="form">
+            <input
+              class="input"
+              autocomplete="off"
+              placeholder="メッセージを入力..."
+            />
+            <button class="submit-button">送信</button>
+          </form>
+        </div>
+
+        <!-- キャンバスエリア -->
+        <div class="flex-1 flex items-center justify-center p-4">
+          <canvas id="canvas" width="400" height="400"></canvas>
+        </div>
+      </div>
     </div>
-    <canvas
-      id="canvas"
-      width="600"
-      height="600"
-      style="border: solid 1px black"
-    ></canvas>
+
+    <!-- モーダル構造 -->
+    <div id="aboutModal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2 class="text-2xl font-bold mb-4">🎨 共同お絵かきチャットについて</h2>
+        <p class="mb-2">
+          このアプリケーションは、Node.js Express と WebSocket を使用して構築されたシンプルなリアルタイムチャットです。
+        </p>
+        <p class="mb-2">
+          チャット機能に加えて、参加者全員で共有できるお絵かきキャンバスも備えています。
+          描画はリアルタイムで他の参加者にも共有されます。
+        </p>
+        <p class="mb-2">
+          特徴:
+        </p>
+        <ul class="list-disc list-inside mb-4">
+            <li>リアルタイムチャット</li>
+            <li>複数ユーザーでの共同お絵かき</li>
+            <li>簡易的なデザイン（Tailwind CSS使用）</li>
+        </ul>
+        <p class="text-sm text-gray-600">
+          このアプリはデモンストレーション目的で作成されました。
+        </p>
+      </div>
+    </div>
 
     <script>
       function main() {
-        // WebSocket接続を確立
-        const host = location.origin.replace(/^http/, 'ws')
-        const ws = new WebSocket(host + '/ws')
-        // ユニークなIDを生成（チャットでの表示用）
-        const myId = self.crypto.randomUUID().substr(0, 8)
+        // WebSocket接続
+        const host = location.origin.replace(/^http/, 'ws');
+        const ws = new WebSocket(host + '/ws');
+        const myId = self.crypto.randomUUID().substr(0, 8); // ユーザーID
 
-        // Canvas要素と2Dコンテキストを取得
-        const canvas = document.getElementById('canvas')
-        const ctx = canvas.getContext('2d')
+        // DOM要素の取得
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const form = document.querySelector('.form');
+        const messageList = document.querySelector('.messages');
+        const input = document.querySelector('.input');
+        const aboutButton = document.getElementById('aboutButton');
+        const clearCanvasButton = document.getElementById('clearCanvasButton');
+        const aboutModal = document.getElementById('aboutModal');
+        const closeButton = document.querySelector('.close-button');
 
-        let drawing = false // 描画中かどうかを示すフラグ
+        let drawing = false; // 描画中フラグ
 
-        // Canvasイベントリスナー: マウスダウンでお絵かき開始メッセージを送信
+        // Canvas描画設定
+        ctx.lineWidth = 2; // 線の太さ
+        ctx.lineCap = 'round'; // 線の端のスタイル
+        ctx.strokeStyle = '#333'; // 線の色
+
+        // Canvasイベントリスナー
         canvas.addEventListener('mousedown', (e) => {
-          sendDrawingEvent(e.offsetX, e.offsetY, 'mousedown')
-        })
-        function mousedown() {
-          drawing = true
-          ctx.beginPath() // 新しいパスを開始
-        }
+          drawing = true;
+          // マウス座標をCanvas要素内の相対座標に変換
+          const rect = canvas.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          sendDrawingEvent(x, y, 'mousedown');
+        });
 
-        // Canvasイベントリスナー: マウス移動中にお絵かき座標メッセージを送信
         canvas.addEventListener('mousemove', (e) => {
           if (drawing) {
-            sendDrawingEvent(e.offsetX, e.offsetY, 'mousemove')
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            sendDrawingEvent(x, y, 'mousemove');
           }
-        })
-        function mousemove(x, y) {
-          if (drawing) {
-            draw(x, y, true) // 描画処理を実行
-          }
-        }
+        });
 
-        // Canvasイベントリスナー: マウスアップでお絵かき終了メッセージを送信
-        canvas.addEventListener('mouseup', (e) => {
-          sendDrawingEvent(e.offsetX, e.offsetY, 'mouseup')
-        })
-        function mouseup() {
-          drawing = false
-          ctx.beginPath() // パスを閉じる（または新しいパスを開始）
-        }
+        canvas.addEventListener('mouseup', () => {
+          drawing = false;
+          sendDrawingEvent(0, 0, 'mouseup'); // 座標は不要だが一貫性のため送信
+          ctx.beginPath(); // 新しいパスを開始
+        });
 
-        // Canvasイベントリスナー: マウスがCanvasから外れたときにお絵かき終了メッセージを送信
-        canvas.addEventListener('mouseout', (e) => {
-          sendDrawingEvent(e.offsetX, e.offsetY, 'mouseout')
-        })
-        function mouseout() {
-          drawing = false
-        }
+        canvas.addEventListener('mouseout', () => {
+          drawing = false;
+          sendDrawingEvent(0, 0, 'mouseout'); // 座標は不要だが一貫性のため送信
+        });
 
         // 描画処理関数
         function draw(x, y, dragging) {
           if (dragging) {
-            ctx.lineTo(x, y) // 現在の点から指定された点まで線を引く
-            ctx.stroke() // 現在のパスを描画
+            ctx.lineTo(x, y);
+            ctx.stroke();
           } else {
-            ctx.moveTo(x, y) // 新しいサブパスの開始点
+            ctx.moveTo(x, y);
           }
         }
 
-        // 描画イベントをWebSocket経由で送信する関数
+        // 描画イベントをWebSocket経由で送信
         function sendDrawingEvent(x, y, control) {
-          const message = JSON.stringify({ x, y, control, type: 'paint' })
-          ws.send(message)
+          const message = JSON.stringify({ x, y, control, type: 'paint' });
+          ws.send(message);
         }
 
-        // WebSocketからメッセージを受信したときの処理
+        // WebSocketからメッセージを受信
         ws.onmessage = (event) => {
-          const msg = JSON.parse(event.data) // 受信したJSON文字列をパース
+          const msg = JSON.parse(event.data);
 
           if (msg.type === 'paint') {
-            // ペイントメッセージの場合
-            const { x, y, control } = msg
-            console.log({ control })
+            // ペイントメッセージの処理
+            const { x, y, control } = msg;
             if (control === 'mousedown') {
-              mousedown()
-            } else if (control === 'mouseup') {
-              mouseup()
+              drawing = true;
+              ctx.beginPath();
+              draw(x,y,false); // Start drawing from the initial point
             } else if (control === 'mousemove') {
-              mousemove(x, y)
-            } else if (control === 'mouseout') {
-              mouseout()
+              if (drawing) {
+                draw(x, y, true);
+              }
+            } else if (control === 'mouseup' || control === 'mouseout') {
+              drawing = false;
+              ctx.beginPath(); // パスを閉じる
             }
-          }
-          if (msg.type === 'chat') {
-            // チャットメッセージの場合
-            const { id, text } = msg
-            const messageList = document.querySelector('.messages')
-            const li = document.createElement('li')
+          } else if (msg.type === 'chat') {
+            // チャットメッセージの処理
+            const { id, text } = msg;
+            const li = document.createElement('li');
+            li.classList.add('message-item', 'flex'); // Flexboxを使って配置を制御
+
             if (id === myId) {
-              li.textContent = `(${id})自分:` + text // 自分のメッセージ
+              li.textContent = `(${id}) 自分: ${text}`;
+              li.classList.add('my-message', 'ml-auto'); // 自分は右寄せ
             } else {
-              li.textContent = id + ': ' + text // 他のユーザーのメッセージ
+              li.textContent = `${id}: ${text}`;
+              li.classList.add('other-message', 'mr-auto'); // 相手は左寄せ
             }
-            messageList.appendChild(li) // メッセージリストに追加
+            messageList.appendChild(li);
+            messageList.scrollTop = messageList.scrollHeight; // スクロールを最下部に
+          } else if (msg.type === 'clear') {
+            // キャンバスをクリアするメッセージの処理
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
           }
-        }
+        };
 
-        // チャットフォームの処理
-        const form = document.querySelector('.form')
+        // チャットフォーム送信
         form.onsubmit = function (e) {
-          e.preventDefault() // フォームのデフォルト送信を防ぐ
-          const input = document.querySelector('.input')
-          const text = input.value
-          // チャットメッセージをJSON形式で送信
-          ws.send(JSON.stringify({ id: myId, text, type: 'chat' }))
-          input.value = '' // 入力欄をクリア
-          input.focus() // 入力欄にフォーカスを戻す
-        }
+          e.preventDefault();
+          const text = input.value;
+          if (text.trim() === '') return; // 空白メッセージは送信しない
+          ws.send(JSON.stringify({ id: myId, text, type: 'chat' }));
+          input.value = '';
+          input.focus();
+        };
 
-        // WebSocketエラー発生時の処理
+        // 「このアプリについて」ボタンクリックでモーダル表示
+        aboutButton.onclick = () => {
+          aboutModal.style.display = 'flex'; // flexを使って中央寄せ
+        };
+
+        // モーダルの閉じるボタン、またはモーダル外クリックでモーダル非表示
+        closeButton.onclick = () => {
+          aboutModal.style.display = 'none';
+        };
+        window.onclick = (event) => {
+          if (event.target === aboutModal) {
+            aboutModal.style.display = 'none';
+          }
+        };
+
+        // 「キャンバスをクリア」ボタンクリック
+        clearCanvasButton.onclick = () => {
+          // 全員にクリアを指示するメッセージを送信
+          ws.send(JSON.stringify({ type: 'clear' }));
+        };
+
+        // WebSocketエラー
         ws.onerror = function (error) {
-          console.error('WebSocket Error: ', error)
-        }
+          console.error('WebSocket Error: ', error);
+        };
       }
 
-      main()
+      // ウィンドウロード時にmain関数を実行
+      window.onload = main;
     </script>
   </body>
 </html>
