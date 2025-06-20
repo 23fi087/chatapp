@@ -3,8 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🎨 共同お絵かきチャット</title>
-    <!-- Tailwind CSS CDNを読み込み -->
+    <title>🎨 共同お絵かきチャット & TODO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       /* Interフォントを適用 */
@@ -24,9 +23,9 @@
         border-radius: 1rem; /* 角を丸く */
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* 影を追加 */
         overflow: hidden;
-        width: 90%;
-        max-width: 900px;
-        height: 90vh; /* 高さも画面に合わせる */
+        width: 95%; /* 幅を広げる */
+        max-width: 1000px; /* 最大幅を調整 */
+        height: 95vh; /* 高さも画面に合わせる */
       }
       .messages {
         flex: 1;
@@ -40,7 +39,7 @@
         margin-bottom: 0.5rem;
         padding: 0.5rem 1rem;
         border-radius: 0.75rem; /* メッセージの角を丸く */
-        max-width: 70%;
+        max-width: 90%; /* メッセージ幅を調整 */
         word-wrap: break-word;
       }
       .my-message {
@@ -117,7 +116,7 @@
       .modal {
         display: none; /* 初期状態では非表示 */
         position: fixed;
-        z-index: 1;
+        z-index: 1000; /* 最前面に表示 */
         left: 0;
         top: 0;
         width: 100%;
@@ -164,11 +163,71 @@
         display: flex;
         flex-direction: column;
       }
+      .todo-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 1rem;
+        background-color: #ffffff;
+        border-radius: 0.75rem;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+      .todo-item.completed span {
+        text-decoration: line-through;
+        color: #6c757d;
+      }
+      .todo-checkbox {
+        margin-right: 0.75rem;
+        cursor: pointer;
+      }
+      .delete-todo-button {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.3rem 0.6rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: background-color 0.2s;
+      }
+      .delete-todo-button:hover {
+        background-color: #c82333;
+      }
+      .todo-list-container {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 1rem;
+        margin-top: 1rem; /* キャンバスの下に配置するための上マージン */
+      }
+      /* レスポンシブデザイン */
+      @media (min-width: 768px) {
+        .main-content-area {
+          flex-direction: row; /* デスクトップでは横並び */
+          height: calc(100% - 70px); /* ヘッダーの高さを考慮 */
+        }
+        .chat-section {
+          flex: 2; /* チャットを大きく */
+          margin-right: 1rem;
+        }
+        .right-panel {
+          flex: 1; /* キャンバスとTODOで右側を占める */
+          display: flex;
+          flex-direction: column; /* 縦並び */
+          gap: 1rem; /* キャンバスとTODOの間に隙間 */
+        }
+        .canvas-section {
+          height: 50%; /* 右側パネル内で半分 */
+          justify-content: flex-start; /* 上寄せ */
+        }
+        .todo-section {
+          height: 50%; /* 右側パネル内で半分 */
+        }
+      }
     </style>
   </head>
   <body>
     <div class="chat-container">
-      <!-- アプリケーションのヘッダー -->
       <div class="control-panel">
         <button id="aboutButton" class="control-button about-button">
           このアプリについて
@@ -178,10 +237,9 @@
         </button>
       </div>
 
-      <!-- チャットとキャンバスエリア -->
-      <div class="flex-grow flex flex-col md:flex-row overflow-hidden">
-        <!-- チャットエリア -->
-        <div class="flex-1 flex flex-col h-full">
+      <div class="flex-grow flex flex-col md:flex-row overflow-hidden p-4 main-content-area">
+        <div class="flex-1 flex flex-col h-full chat-section">
+          <h2 class="text-xl font-bold mb-2 text-gray-800">チャット</h2>
           <ul class="messages messages-wrapper"></ul>
           <form class="form">
             <input
@@ -193,24 +251,39 @@
           </form>
         </div>
 
-        <!-- キャンバスエリア -->
-        <div class="flex-1 flex items-center justify-center p-4">
-          <canvas id="canvas" width="400" height="400"></canvas>
+        <div class="flex-1 flex flex-col right-panel h-full">
+          <div class="flex-1 flex flex-col items-center justify-center p-4 canvas-section">
+            <h2 class="text-xl font-bold mb-2 text-gray-800">共同お絵かき</h2>
+            <canvas id="canvas" width="400" height="400"></canvas>
+          </div>
+
+          <div class="flex-1 flex flex-col h-full todo-list-container todo-section">
+            <h2 class="text-xl font-bold mb-2 text-gray-800">TODOメモ</h2>
+            <div class="flex mb-4">
+              <input
+                id="todoInput"
+                class="input flex-grow mr-2"
+                autocomplete="off"
+                placeholder="新しいTODOを追加..."
+              />
+              <button id="addTodoButton" class="submit-button">追加</button>
+            </div>
+            <ul id="todoList" class="flex-1 overflow-y-auto"></ul>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- モーダル構造 -->
     <div id="aboutModal" class="modal">
       <div class="modal-content">
         <span class="close-button">&times;</span>
-        <h2 class="text-2xl font-bold mb-4">🎨 共同お絵かきチャットについて</h2>
+        <h2 class="text-2xl font-bold mb-4">🎨 共同お絵かきチャット & TODO</h2>
         <p class="mb-2">
           このアプリケーションは、Node.js Express と WebSocket を使用して構築されたシンプルなリアルタイムチャットです。
         </p>
         <p class="mb-2">
-          チャット機能に加えて、参加者全員で共有できるお絵かきキャンバスも備えています。
-          描画はリアルタイムで他の参加者にも共有されます。
+          参加者全員で共有できるお絵かきキャンバスと、リアルタイムで更新されるTODOメモ機能が備わっています。
+          描画やTODOの変更は、リアルタイムで他の参加者にも共有されます。
         </p>
         <p class="mb-2">
           特徴:
@@ -218,6 +291,7 @@
         <ul class="list-disc list-inside mb-4">
             <li>リアルタイムチャット</li>
             <li>複数ユーザーでの共同お絵かき</li>
+            <li>リアルタイム共有TODOメモ</li>
             <li>簡易的なデザイン（Tailwind CSS使用）</li>
         </ul>
         <p class="text-sm text-gray-600">
@@ -236,15 +310,21 @@
         // DOM要素の取得
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const form = document.querySelector('.form');
+        const chatForm = document.querySelector('.form'); // チャットフォーム名を変更
         const messageList = document.querySelector('.messages');
-        const input = document.querySelector('.input');
+        const chatInput = document.querySelector('.input'); // チャット入力名を変更
         const aboutButton = document.getElementById('aboutButton');
         const clearCanvasButton = document.getElementById('clearCanvasButton');
         const aboutModal = document.getElementById('aboutModal');
         const closeButton = document.querySelector('.close-button');
 
+        // TODO関連のDOM要素
+        const todoInput = document.getElementById('todoInput');
+        const addTodoButton = document.getElementById('addTodoButton');
+        const todoList = document.getElementById('todoList');
+
         let drawing = false; // 描画中フラグ
+        let todos = []; // TODOアイテムを保持する配列
 
         // Canvas描画設定
         ctx.lineWidth = 2; // 線の太さ
@@ -297,6 +377,65 @@
           ws.send(message);
         }
 
+        // TODOリストのレンダリング関数
+        function renderTodos() {
+          todoList.innerHTML = ''; // リストをクリア
+          todos.forEach(todo => {
+            const li = document.createElement('li');
+            li.id = `todo-${todo.id}`; // 各TODOアイテムにユニークなIDを設定
+            li.classList.add('todo-item');
+            if (todo.completed) {
+              li.classList.add('completed');
+            }
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = todo.completed;
+            checkbox.classList.add('todo-checkbox');
+            checkbox.onchange = () => {
+              ws.send(JSON.stringify({ type: 'todo', action: 'toggle', id: todo.id, completed: checkbox.checked }));
+            };
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = todo.text;
+            textSpan.classList.add('flex-grow'); // テキストが領域を占めるように
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = '削除';
+            deleteButton.classList.add('delete-todo-button');
+            deleteButton.onclick = () => {
+              ws.send(JSON.stringify({ type: 'todo', action: 'delete', id: todo.id }));
+            };
+
+            li.appendChild(checkbox);
+            li.appendChild(textSpan);
+            li.appendChild(deleteButton);
+            todoList.appendChild(li);
+          });
+        }
+
+        // TODOアイテムを追加
+        function addTodoItem(id, text) {
+          todos.push({ id, text, completed: false });
+          renderTodos();
+        }
+
+        // TODOアイテムの完了状態を切り替える
+        function toggleTodoItem(id, completed) {
+          const todoIndex = todos.findIndex(todo => todo.id === id);
+          if (todoIndex !== -1) {
+            todos[todoIndex].completed = completed;
+            renderTodos();
+          }
+        }
+
+        // TODOアイテムを削除
+        function deleteTodoItem(id) {
+          todos = todos.filter(todo => todo.id !== id);
+          renderTodos();
+        }
+
+
         // WebSocketからメッセージを受信
         ws.onmessage = (event) => {
           const msg = JSON.parse(event.data);
@@ -334,17 +473,37 @@
           } else if (msg.type === 'clear') {
             // キャンバスをクリアするメッセージの処理
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+          } else if (msg.type === 'todo') {
+            // TODOメッセージの処理
+            const { action, id, text, completed } = msg;
+            if (action === 'add') {
+              addTodoItem(id, text);
+            } else if (action === 'toggle') {
+              toggleTodoItem(id, completed);
+            } else if (action === 'delete') {
+              deleteTodoItem(id);
+            }
           }
         };
 
         // チャットフォーム送信
-        form.onsubmit = function (e) {
+        chatForm.onsubmit = function (e) {
           e.preventDefault();
-          const text = input.value;
+          const text = chatInput.value;
           if (text.trim() === '') return; // 空白メッセージは送信しない
           ws.send(JSON.stringify({ id: myId, text, type: 'chat' }));
-          input.value = '';
-          input.focus();
+          chatInput.value = '';
+          chatInput.focus();
+        };
+
+        // TODO追加ボタンクリック
+        addTodoButton.onclick = () => {
+          const text = todoInput.value.trim();
+          if (text === '') return;
+          const newId = self.crypto.randomUUID().substr(0, 8);
+          ws.send(JSON.stringify({ type: 'todo', action: 'add', id: newId, text }));
+          todoInput.value = '';
+          todoInput.focus();
         };
 
         // 「このアプリについて」ボタンクリックでモーダル表示
