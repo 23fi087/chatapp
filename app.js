@@ -5,27 +5,27 @@ const app = express()
 expressWs(app)
 
 const port = process.env.PORT || 3001
-let connects = [] // WebSocket接続を保持する配列
+let connects = [] 
 
-app.use(express.static('public')) // publicフォルダを静的ファイルとして提供
+app.use(express.static('public')) 
 
 app.ws('/ws', (ws, req) => {
-  connects.push(ws) // 新しい接続を配列に追加
+  connects.push(ws) 
 
   ws.on('message', (message) => {
     console.log('Received:', message)
 
-    // 受信したメッセージを接続している全てのクライアントにブロードキャスト
+    
     connects.forEach((socket) => {
       if (socket.readyState === 1) {
-        // WebSocket接続がOPEN状態であることを確認
+        
         socket.send(message)
       }
     })
   })
 
   ws.on('close', () => {
-    // 接続が閉じたら配列から削除
+    
     connects = connects.filter((conn) => conn !== ws)
   })
 })
